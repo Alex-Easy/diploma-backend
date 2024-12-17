@@ -1,10 +1,27 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import EmailValidator, RegexValidator
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import Group
+from django.contrib.auth.models import Permission
 
 
-# TODO: think about how to add user model
+class User(AbstractUser):
+    email = models.EmailField(unique=True, verbose_name="Электронная почта",
+                              help_text="Уникальный адрес электронной почты")
+    first_name = models.CharField(max_length=255, verbose_name="Имя", help_text="Имя пользователя")
+    last_name = models.CharField(max_length=255, verbose_name="Фамилия", help_text="Фамилия пользователя")
+    company = models.CharField(max_length=255, verbose_name="Компания", help_text="Компания пользователя")
+    position = models.CharField(max_length=255, verbose_name="Должность", help_text="Должность пользователя")
+
+    groups = models.ManyToManyField(Group, related_name='backend_user_groups', blank=True,
+                                    verbose_name="Группы", help_text="Группы, к которым принадлежит пользователь")
+    user_permissions = models.ManyToManyField(Permission, related_name='backend_user_permissions', blank=True,
+                                              verbose_name="Права пользователя",
+                                              help_text="Права доступа, назначенные пользователю")
+
+    def __str__(self):
+        return f'{self.first_name} {self.last_name}'
 
 
 class Shop(models.Model):
@@ -141,42 +158,13 @@ class OrderItem(models.Model):
 
 
 class Contact(models.Model):
-    CONTACT_TYPE_CHOICES = [
-        ('email', 'Email'),
-        ('phone', 'Телефон'),
-        ('address', 'Адрес'),
-    ]
-    type = models.CharField(max_length=50, choices=CONTACT_TYPE_CHOICES, verbose_name='Тип контакта',
-                            help_text='Тип контакта')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contacts',
-                             verbose_name='Пользователь', help_text='Пользователь, который представлен в контакте')
-    value = models.CharField(max_length=255, verbose_name='Значение контакта', help_text='Значение контакта')
+    user = models.ForeignKey(User, related_name="contacts", on_delete=models.CASCADE, verbose_name="Пользователь",
+                             help_text="Пользователь, для которого указан контакт")
+    city = models.CharField(max_length=255, verbose_name="Город", help_text="Город проживания пользователя")
+    street = models.CharField(max_length=255, verbose_name="Улица", help_text="Улица проживания пользователя")
+    house = models.CharField(max_length=255, verbose_name="Дом", help_text="Номер дома")
+    apartment = models.CharField(max_length=255, verbose_name="Квартира", help_text="Номер квартиры")
+    phone = models.CharField(max_length=15, verbose_name="Телефон", help_text="Контактный телефон пользователя")
 
-    def clean(self):
-        value = str(self.value)
-        if self.type == 'email':
-            EmailValidator(message="Введите корректный email-адрес.")(value)
-        elif self.type == 'phone':
-            RegexValidator(regex=r'^\+?\d{10,15}$', message="Введите корректный номер телефона.")(value)
-        elif self.type == 'address':
-            synonyms = {
-                'город': ['г.', 'г', 'город'],
-                'улица': ['ул.', 'ул', 'улица'],
-                'дом': ['д.', 'д', 'дом'],
-            }
-
-            value_lower = value.lower()
-
-            for standard_word, variants in synonyms.items():
-                for variant in variants:
-                    value_lower = value_lower.replace(variant, standard_word)
-
-            required_words = ['город', 'улица', 'дом']
-
-            for word in required_words:
-                if word not in value_lower:
-                    raise ValidationError(
-                        f"Адрес должен содержать следующие элементы: '{', '.join(required_words)}'."
-                    )
-
-
+    def __str__(self):
+        return f'{self.city}, {self.street}, {self.phone}'

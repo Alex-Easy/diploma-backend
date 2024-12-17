@@ -1,8 +1,7 @@
 from django.urls import path
-from . import views
+from .views import RegisterUserView, LoginView
 
 urlpatterns = [
-    # API routes are empty for now, we will add them later
+    path('register/', RegisterUserView.as_view(), name='register'),
+    path('login/', LoginView.as_view(), name='login'),
 ]
-
-# TODO API routes
