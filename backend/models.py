@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.validators import EmailValidator, RegexValidator
 from django.core.exceptions import ValidationError
 
+
 # TODO: think about how to add user model
 
 
@@ -152,17 +153,30 @@ class Contact(models.Model):
     value = models.CharField(max_length=255, verbose_name='Значение контакта', help_text='Значение контакта')
 
     def clean(self):
+        value = str(self.value)
         if self.type == 'email':
-            EmailValidator(message="Введите корректный email-адрес.")(self.value)
+            EmailValidator(message="Введите корректный email-адрес.")(value)
         elif self.type == 'phone':
-            RegexValidator(regex=r'^\+?\d{10,15}$', message="Введите корректный номер телефона.")(self.value)
+            RegexValidator(regex=r'^\+?\d{10,15}$', message="Введите корректный номер телефона.")(value)
+        elif self.type == 'address':
+            synonyms = {
+                'город': ['г.', 'г', 'город'],
+                'улица': ['ул.', 'ул', 'улица'],
+                'дом': ['д.', 'д', 'дом'],
+            }
 
-# TODO: think about adding address validation
+            value_lower = value.lower()
 
-    def __str__(self):
-        return f'{self.user} - {self.type}: {self.value}'
+            for standard_word, variants in synonyms.items():
+                for variant in variants:
+                    value_lower = value_lower.replace(variant, standard_word)
 
-    class Meta:
-        unique_together = ('user', 'type', 'value')
-        verbose_name = 'Контакт'
-        verbose_name_plural = 'Контакты'
+            required_words = ['город', 'улица', 'дом']
+
+            for word in required_words:
+                if word not in value_lower:
+                    raise ValidationError(
+                        f"Адрес должен содержать следующие элементы: '{', '.join(required_words)}'."
+                    )
+
+
