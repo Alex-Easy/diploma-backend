@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import Group
@@ -158,7 +159,7 @@ class OrderItem(models.Model):
 
 
 class Contact(models.Model):
-    user = models.ForeignKey(User, related_name="contacts", on_delete=models.CASCADE, verbose_name="Пользователь",
+    user = models.ForeignKey(get_user_model(), related_name="contacts", on_delete=models.CASCADE, verbose_name="Пользователь",
                              help_text="Пользователь, для которого указан контакт")
     city = models.CharField(max_length=255, verbose_name="Город", help_text="Город проживания пользователя")
     street = models.CharField(max_length=255, verbose_name="Улица", help_text="Улица проживания пользователя")
