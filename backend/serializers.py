@@ -167,3 +167,9 @@ class OrderStatusUpdateSerializer(serializers.ModelSerializer):
         if value not in dict(Order.STATUS_CHOICES):
             raise serializers.ValidationError("Некорректный статус.")
         return value
+
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductInfo
+        fields = ['product', 'shop', 'quantity', 'price', 'price_rrc']

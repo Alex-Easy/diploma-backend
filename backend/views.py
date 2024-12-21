@@ -5,10 +5,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
-from .models import Product, Cart, Contact, Order
+from .models import Product, Cart, Contact, Order, ProductInfo
 from .serializers import UserRegisterSerializer, LoginSerializer, ShopSerializer, CategorySerializer, ProductSerializer, \
     ProductInfoSerializer, ProductListSerializer, CartSerializer, ContactSerializer, OrderConfirmationSerializer, \
-    OrderSerializer, OrderStatusUpdateSerializer
+    OrderSerializer, OrderStatusUpdateSerializer, ProductDetailSerializer
 from django.core.exceptions import ValidationError
 import yaml
 from django.core.mail import send_mail
@@ -233,6 +233,16 @@ class OrderStatusUpdateView(APIView):
             return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProductDetailView(APIView):
+    def get(self, request, product_id):
+        try:
+            product_info = ProductInfo.objects.get(product__id=product_id)
+            serializer = ProductDetailSerializer(product_info)
+            return Response(serializer.data)
+        except ProductInfo.DoesNotExist:
+            return Response({"detail": "Продукт не найден."}, status=status.HTTP_404_NOT_FOUND)
 
 
 def send_confirmation_email(user_email, order_id):

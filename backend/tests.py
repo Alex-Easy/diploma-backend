@@ -419,3 +419,21 @@ def test_order_confirmation_email_sent(mock_send_mail, api_client, user, order):
         'test@example.com',
         [user.email]
     )
+
+
+@pytest.mark.django_db
+def test_get_product_detail_success(api_client, product_info):
+    url = reverse('product_detail', args=[product_info.product.id])
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.data['product'] == product_info.product.id
+    assert response.data['price'] == product_info.price
+    assert response.data['quantity'] == product_info.quantity
+
+
+@pytest.mark.django_db
+def test_get_product_detail_not_found(api_client):
+    url = reverse('product_detail', args=[9999])  # Несуществующий продукт
+    response = api_client.get(url)
+    assert response.status_code == 404
+    assert response.data['detail'] == 'Product not found.'
