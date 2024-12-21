@@ -211,3 +211,40 @@ def test_remove_from_cart_deletes_cart_item_for_authenticated_users(api_client, 
     cart_item = api_client.post('/api/cart/', {'product': product.id, 'quantity': 2}).data
     response = api_client.delete(f'/api/cart/{cart_item["id"]}/')
     assert response.status_code == 204  # Товар успешно удален из корзины
+
+
+# Тест на получение списка контактов
+def test_get_contact_list(authenticated_user, contact):
+    api_client, user = authenticated_user
+    url = reverse('contact_list')
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) > 0  # Проверка, что возвращены данные
+
+
+# Тест на получение контакта по ID
+def test_get_contact_detail(authenticated_user, contact):
+    api_client, user = authenticated_user
+    url = reverse('contact_detail', args=[contact.id])
+    response = api_client.get(url)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['city'] == contact.city
+
+
+# Тест на обновление контакта
+def test_update_contact(authenticated_user, contact):
+    api_client, user = authenticated_user
+    data = {'city': 'Updated City'}
+    url = reverse('contact_detail', args=[contact.id])
+    response = api_client.put(url, data)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['city'] == 'Updated City'
+
+
+# Тест на удаление контакта
+def test_delete_contact(authenticated_user, contact):
+    api_client, user = authenticated_user
+    url = reverse('contact_detail', args=[contact.id])
+    response = api_client.delete(url)
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert not Contact.objects.filter(id=contact.id).exists()

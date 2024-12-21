@@ -1,12 +1,13 @@
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
-from .models import Product, Cart
+from .models import Product, Cart, Contact
 from .serializers import UserRegisterSerializer, LoginSerializer, ShopSerializer, CategorySerializer, ProductSerializer, \
-    ProductInfoSerializer, ProductListSerializer, CartSerializer
+    ProductInfoSerializer, ProductListSerializer, CartSerializer, ContactSerializer
 from django.core.exceptions import ValidationError
 import yaml
 
@@ -116,3 +117,53 @@ class CartView(APIView):
         product_id = request.data.get('product_id')
         Cart.objects.filter(user=request.user, product_id=product_id).delete()
         return Response({'status': 'removed'})
+
+
+class ContactListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        contacts = Contact.objects.filter(user=request.user)
+        serializer = ContactSerializer(contacts, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ContactSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ContactDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, contact_id, user):
+        try:
+            return Contact.objects.get(id=contact_id, user=user)
+        except Contact.DoesNotExist:
+            return None
+
+    def get(self, request, contact_id):
+        contact = self.get_object(contact_id, request.user)
+        if contact is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ContactSerializer(contact)
+        return Response(serializer.data)
+
+    def put(self, request, contact_id):
+        contact = self.get_object(contact_id, request.user)
+        if contact is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ContactSerializer(contact, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, contact_id):
+        contact = self.get_object(contact_id, request.user)
+        if contact is None:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        contact.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
