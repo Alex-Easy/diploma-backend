@@ -289,3 +289,39 @@ def test_confirm_order_not_found(api_client, user):
     # Проверка, что заказ не найден
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
+
+@pytest.mark.django_db
+def test_get_order_list(api_client, user, order):
+    # Аутентификация пользователя
+    api_client.force_authenticate(user=user)
+
+    # Получение списка заказов
+    url = reverse('order_list')
+    response = api_client.get(url)
+
+    # Проверка, что заказ в списке
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) > 0  # Должен быть хотя бы один заказ
+    assert response.data[0]['id'] == order.id  # Проверяем наличие правильного заказа
+
+
+@pytest.mark.django_db
+def test_get_order_list_unauthorized(api_client):
+    # Попытка получить список заказов без авторизации
+    url = reverse('order_list')
+    response = api_client.get(url)
+
+    # Проверка, что неавторизованный пользователь не может получить список заказов
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+def test_get_order_list_empty(api_client, user):
+    # Проверка получения пустого списка заказов, если у пользователя нет заказов
+    api_client.force_authenticate(user=user)
+    url = reverse('order_list')
+    response = api_client.get(url)
+
+    # Проверка, что список заказов пуст
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) == 0  # Список пуст

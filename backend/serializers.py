@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
-from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Cart, Contact, Order
+from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Cart, Contact, Order, OrderItem
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -142,3 +142,17 @@ class OrderConfirmationSerializer(serializers.ModelSerializer):
         instance.status = 'confirmed'
         instance.save()
         return instance
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['product', 'quantity', 'price', 'shop']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'status', 'created_at', 'updated_at', 'items']
