@@ -1,5 +1,3 @@
-import os
-
 import pytest
 from django.contrib.auth import get_user_model
 from .models import Shop, Category, Product, ProductInfo, Order, OrderItem, Contact
@@ -31,6 +29,26 @@ def shop():
 @pytest.fixture
 def category():
     return Category.objects.create(name="Electronics")
+
+
+@pytest.fixture
+def product(category):
+    from .models import Product
+    product = Product.objects.create(name="Test Product", category=category)
+    return product
+
+
+@pytest.fixture
+def product_info(shop, category, product):
+    from .models import ProductInfo
+    product_info = ProductInfo.objects.create(
+        product=product,
+        shop=shop,
+        quantity=10,
+        price=100,
+        price_rrc=90
+    )
+    return product_info
 
 
 @pytest.mark.django_db
@@ -106,69 +124,20 @@ def api_client():
 
 
 @pytest.fixture
-def user():
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-    user = User.objects.create_user(username='testuser', password='password123')
-    return user
-
-
-@pytest.fixture
-def shop():
-    from .models import Shop
-    shop = Shop.objects.create(name='Test Shop', url='http://testshop.com')
-    return shop
-
-
-@pytest.fixture
-def category():
-    from .models import Category
-    category = Category.objects.create(name='Electronics')
-    return category
-
-
-@pytest.fixture
-def product():
-    from .models import Product
-    product = Product.objects.create(name='Test Product', category_id=1)
-    return product
-
-
-@pytest.fixture
-def product_info():
-    from .models import ProductInfo
-    product_info = ProductInfo.objects.create(product_id=1, shop_id=1, quantity=10, price=100, price_rrc=90)
-    return product_info
-
-
-# @pytest.mark.django_db
-# def test_import_products_success(api_client, user, shop, category, product, product_info):
-#     api_client.force_authenticate(user=user)
-#     url = reverse('import_products')
-#     data = {
-#         'shop': {
-#             'name': 'Связной',
-#             'url': 'http://svyaznoy.ru'
-#         },
-#         'categories': [
-#             {
-#                 'id': 224,
-#                 'name': 'Смартфоны'
-#             }
-#         ],
-#         'goods': [
-#             {
-#                 'id': 4216292,
-#                 'category': 224,
-#                 'name': 'Смартфон Apple iPhone XS Max 512GB (золотистый)',
-#                 'price': 110000,
-#                 'price_rrc': 116990,
-#                 'quantity': 14
-#             }
-#         ]
-#     }
-#     response = api_client.post(url, data, format='json')
-#     assert response.status_code == status.HTTP_201_CREATED
+def authenticated_user(db):
+    user_data = {
+        'username': 'testuser',
+        'email': 'testuser@example.com',
+        'password': 'password123',
+        'first_name': 'Test',
+        'last_name': 'User'
+    }
+    user = get_user_model().objects.create_user(**user_data)
+    user.set_password('password123')
+    user.save()
+    client = APIClient()
+    client.force_authenticate(user=user)
+    return client, user
 
 
 @pytest.mark.django_db
@@ -191,3 +160,54 @@ def test_import_products_invalid_yaml_format(api_client, user, shop, category, p
     """
     response = api_client.post(url, data, format='json')
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_product_list_returns_200_for_authenticated_users(api_client, user, product):
+    api_client.force_authenticate(user=user)
+    response = api_client.get('/api/products/')
+    assert response.status_code == 200
+    assert isinstance(response.data, list)  # Данные возвращаются в виде списка
+    assert len(response.data) > 0  # Проверка, что товары возвращаются
+
+
+@pytest.mark.django_db
+def test_product_list_returns_403_for_unauthenticated_users(api_client):
+    response = api_client.get('/api/products/')
+    assert response.status_code == 403  # Доступ запрещен для неавторизованных
+
+
+@pytest.mark.django_db
+def test_product_list_returns_empty_list_for_authenticated_users(api_client, user):
+    api_client.force_authenticate(user=user)
+    response = api_client.get('/api/products/')
+    assert response.status_code == 200
+    assert isinstance(response.data, list)  # Данные возвращаются в виде списка
+    assert len(response.data) == 0  # Проверка пустого списка
+
+
+@pytest.mark.django_db
+def test_add_to_cart_creates_cart_item_for_authenticated_users(api_client, user, product):
+    api_client.force_authenticate(user=user)
+    response = api_client.post('/api/cart/', {'product': product.id, 'quantity': 2})
+    assert response.status_code == 201  # Товар успешно добавлен
+    assert isinstance(response.data, dict)  # Данные возвращаются в виде словаря
+    assert 'id' in response.data  # Корзина создана
+
+
+@pytest.mark.django_db
+def test_get_cart_returns_200_for_authenticated_users(api_client, user, product):
+    api_client.force_authenticate(user=user)
+    api_client.post('/api/cart/', {'product': product.id, 'quantity': 2})  # Добавляем товар
+    response = api_client.get('/api/cart/')
+    assert response.status_code == 200
+    assert isinstance(response.data, list)  # Данные возвращаются в виде словаря
+    assert len(response.data) > 0  # Проверка, что корзина не пуста
+
+
+@pytest.mark.django_db
+def test_remove_from_cart_deletes_cart_item_for_authenticated_users(api_client, user, product):
+    api_client.force_authenticate(user=user)
+    cart_item = api_client.post('/api/cart/', {'product': product.id, 'quantity': 2}).data
+    response = api_client.delete(f'/api/cart/{cart_item["id"]}/')
+    assert response.status_code == 204  # Товар успешно удален из корзины

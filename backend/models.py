@@ -159,7 +159,8 @@ class OrderItem(models.Model):
 
 
 class Contact(models.Model):
-    user = models.ForeignKey(get_user_model(), related_name="contacts", on_delete=models.CASCADE, verbose_name="Пользователь",
+    user = models.ForeignKey(get_user_model(), related_name="contacts", on_delete=models.CASCADE,
+                             verbose_name="Пользователь",
                              help_text="Пользователь, для которого указан контакт")
     city = models.CharField(max_length=255, verbose_name="Город", help_text="Город проживания пользователя")
     street = models.CharField(max_length=255, verbose_name="Улица", help_text="Улица проживания пользователя")
@@ -169,3 +170,12 @@ class Contact(models.Model):
 
     def __str__(self):
         return f'{self.city}, {self.street}, {self.phone}'
+
+
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+
+    def __str__(self):
+        return f"Cart item for {self.user} - {self.product.name}"

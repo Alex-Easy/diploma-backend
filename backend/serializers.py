@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
+from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Cart
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -24,3 +25,103 @@ class LoginSerializer(serializers.Serializer):
         if user is None:
             raise serializers.ValidationError("Invalid credentials")
         return user
+
+
+class ImportSerializer(serializers.Serializer):
+    file = serializers.FileField()
+
+    def validate_file(self, value):
+        # Дополнительная валидация, если нужно
+        return value
+
+
+class ShopSerializer(serializers.ModelSerializer):
+    categories = serializers.ListField(child=serializers.DictField())
+    goods = serializers.ListField(child=serializers.DictField())
+
+    class Meta:
+        model = Shop
+        fields = ['name', 'url', 'categories', 'goods']
+
+    def create(self, validated_data):
+        shop_data = validated_data.pop('shop')
+        categories_data = validated_data.pop('categories')
+        goods_data = validated_data.pop('goods')
+
+        shop = Shop.objects.create(name=shop_data['name'], url=shop_data['url'])
+
+        for category in categories_data:
+            category_obj = Category.objects.create(name=category['name'])
+
+        for good in goods_data:
+            product = Product.objects.create(
+                category=category_obj,
+                name=good['name'],
+                price=good['price'],
+                price_rrc=good['price_rrc'],
+                quantity=good['quantity']
+            )
+            ProductInfo.objects.create(
+                product=product,
+                shop=shop,
+                quantity=good['quantity'],
+                price=good['price'],
+                price_rrc=good['price_rrc']
+            )
+
+        return shop
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+
+    class Meta:
+        model = Product
+        fields = ['name', 'category']
+
+
+class ProductInfoSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    shop = serializers.PrimaryKeyRelatedField(queryset=Shop.objects.all())
+
+    class Meta:
+        model = ProductInfo
+        fields = ['product', 'shop', 'quantity', 'price', 'price_rrc']
+
+
+class ParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parameter
+        fields = ['name']
+
+
+class ProductParameterSerializer(serializers.ModelSerializer):
+    product_info = serializers.PrimaryKeyRelatedField(queryset=ProductInfo.objects.all())
+    parameter = serializers.PrimaryKeyRelatedField(queryset=Parameter.objects.all())
+
+    class Meta:
+        model = ProductParameter
+        fields = ['product_info', 'parameter', 'value']
+
+
+class ProductListSerializer(serializers.ModelSerializer):
+    category = CategorySerializer()
+
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'category', 'price', 'price_rrc']
+
+
+class CartSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+    quantity = serializers.IntegerField()
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'product', 'quantity']
