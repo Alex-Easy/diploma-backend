@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
-from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Cart, Contact
+from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Cart, Contact, Order
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -131,3 +131,14 @@ class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ['id', 'user', 'city', 'street', 'house', 'apartment', 'phone']
+
+
+class OrderConfirmationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['status']
+
+    def update(self, instance, validated_data):
+        instance.status = 'confirmed'
+        instance.save()
+        return instance
