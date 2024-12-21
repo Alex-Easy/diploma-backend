@@ -4,6 +4,7 @@ from .models import Shop, Category, Product, ProductInfo, Order, OrderItem, Cont
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -396,3 +397,25 @@ def test_update_order_status_other_user(api_client, user, another_user, order):
     response = api_client.patch(url, data, format='json')
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+@patch('django.core.mail.send_mail')
+def test_order_confirmation_email_sent(mock_send_mail, api_client, user, order):
+    api_client.force_authenticate(user=user)
+    url = reverse('order_status_update', kwargs={'order_id': order.id})
+    data = {"status": "confirmed"}
+
+    response = api_client.patch(url, data, format='json')
+
+    # Проверка успешного изменения статуса заказа
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['status'] == "confirmed"
+
+    # Проверяем, что email был отправлен
+    mock_send_mail.assert_called_once_with(
+        'Подтверждение заказа',
+        f'Ваш заказ #{order.id} был подтвержден. Спасибо за покупку!',
+        'test@example.com',
+        [user.email]
+    )

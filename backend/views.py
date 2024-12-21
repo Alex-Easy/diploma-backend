@@ -11,6 +11,8 @@ from .serializers import UserRegisterSerializer, LoginSerializer, ShopSerializer
     OrderSerializer, OrderStatusUpdateSerializer
 from django.core.exceptions import ValidationError
 import yaml
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class RegisterUserView(APIView):
@@ -221,8 +223,22 @@ class OrderStatusUpdateView(APIView):
         except Order.DoesNotExist:
             return Response({"detail": "Заказ не найден."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
+        serializer = OrderSerializer(order, data=request.data, partial=True)
+
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            order = serializer.save()
+            # Отправляем email, если заказ подтвержден
+            if order.status == "confirmed":
+                send_confirmation_email(order.user.email, order.id)
+            return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def send_confirmation_email(user_email, order_id):
+    subject = 'Подтверждение заказа'
+    message = f'Ваш заказ #{order_id} был подтвержден. Спасибо за покупку!'
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [user_email]
+
+    send_mail(subject, message, from_email, recipient_list)
