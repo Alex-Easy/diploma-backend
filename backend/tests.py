@@ -348,3 +348,51 @@ def test_order_detail_not_found(api_client, user):
     response = api_client.get('/api/orders/999/')
     assert response.status_code == 404
     assert response.data['detail'] == "Not found."
+
+
+@pytest.fixture
+def order(user):
+    return Order.objects.create(user=user, status="new")
+
+
+@pytest.mark.django_db
+def test_update_order_status_authenticated_user(api_client, user, order):
+    api_client.force_authenticate(user=user)
+    url = reverse('order_status_update', kwargs={'order_id': order.id})
+    data = {"status": "confirmed"}
+    response = api_client.patch(url, data, format='json')
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['status'] == "confirmed"
+    order.refresh_from_db()
+    assert order.status == "confirmed"
+
+
+@pytest.mark.django_db
+def test_update_order_status_unauthenticated_user(api_client, order):
+    url = reverse('order_status_update', kwargs={'order_id': order.id})
+    data = {"status": "confirmed"}
+    response = api_client.patch(url, data, format='json')
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+def test_update_order_status_invalid_status(api_client, user, order):
+    api_client.force_authenticate(user=user)
+    url = reverse('order_status_update', kwargs={'order_id': order.id})
+    data = {"status": "invalid_status"}
+    response = api_client.patch(url, data, format='json')
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Некорректный статус" in str(response.data)
+
+
+@pytest.mark.django_db
+def test_update_order_status_other_user(api_client, user, another_user, order):
+    api_client.force_authenticate(user=another_user)
+    url = reverse('order_status_update', kwargs={'order_id': order.id})
+    data = {"status": "confirmed"}
+    response = api_client.patch(url, data, format='json')
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND

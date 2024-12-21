@@ -124,6 +124,7 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('new', 'Новый'),
         ('processing', 'В процессе'),
+        ('confirmed', 'Подтверждён'),
         ('delivered', 'Доставлен'),
         ('cancelled', 'Отменён'),
     ]

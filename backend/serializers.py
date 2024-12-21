@@ -156,3 +156,14 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'status', 'created_at', 'updated_at', 'items']
+
+
+class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['status']
+
+    def validate_status(self, value):
+        if value not in dict(Order.STATUS_CHOICES):
+            raise serializers.ValidationError("Некорректный статус.")
+        return value
