@@ -214,6 +214,7 @@ def test_remove_from_cart_deletes_cart_item_for_authenticated_users(api_client, 
 
 
 # Тест на получение списка контактов
+@pytest.mark.django_db
 def test_get_contact_list(authenticated_user, contact):
     api_client, user = authenticated_user
     url = reverse('contact_list')
@@ -223,6 +224,7 @@ def test_get_contact_list(authenticated_user, contact):
 
 
 # Тест на получение контакта по ID
+@pytest.mark.django_db
 def test_get_contact_detail(authenticated_user, contact):
     api_client, user = authenticated_user
     url = reverse('contact_detail', args=[contact.id])
@@ -232,6 +234,7 @@ def test_get_contact_detail(authenticated_user, contact):
 
 
 # Тест на обновление контакта
+@pytest.mark.django_db
 def test_update_contact(authenticated_user, contact):
     api_client, user = authenticated_user
     data = {'city': 'Updated City'}
@@ -242,9 +245,47 @@ def test_update_contact(authenticated_user, contact):
 
 
 # Тест на удаление контакта
+@pytest.mark.django_db
 def test_delete_contact(authenticated_user, contact):
     api_client, user = authenticated_user
     url = reverse('contact_detail', args=[contact.id])
     response = api_client.delete(url)
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not Contact.objects.filter(id=contact.id).exists()
+
+
+@pytest.mark.django_db
+def test_confirm_order(api_client, user, order):
+    # Аутентификация пользователя
+    api_client.force_authenticate(user=user)
+
+    # Подтверждение заказа
+    url = reverse('order_confirm', args=[order.id])
+    response = api_client.post(url)
+
+    # Проверка успешного подтверждения
+    assert response.status_code == status.HTTP_200_OK
+    order.refresh_from_db()
+    assert order.status == 'confirmed'
+
+
+@pytest.mark.django_db
+def test_confirm_order_unauthorized(api_client, order):
+    # Попытка подтвердить заказ без авторизации
+    url = reverse('order_confirm', args=[order.id])
+    response = api_client.post(url)
+
+    # Проверка, что неавторизованный пользователь не может подтвердить заказ
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+def test_confirm_order_not_found(api_client, user):
+    # Попытка подтвердить несуществующий заказ
+    api_client.force_authenticate(user=user)
+    url = reverse('order_confirm', args=[99999])  # Не существует заказа с таким ID
+    response = api_client.post(url)
+
+    # Проверка, что заказ не найден
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
