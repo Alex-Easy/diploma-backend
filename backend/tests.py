@@ -325,3 +325,26 @@ def test_get_order_list_empty(api_client, user):
     # Проверка, что список заказов пуст
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 0  # Список пуст
+
+
+@pytest.mark.django_db
+def test_order_detail_authenticated_user(api_client, user, order, order_item):
+    api_client.force_authenticate(user=user)
+    response = api_client.get(f'/api/orders/{order.id}/')
+    assert response.status_code == 200
+    assert response.data['id'] == order.id
+    assert response.data['status'] == order.status
+
+
+@pytest.mark.django_db
+def test_order_detail_unauthorized_user(api_client, order):
+    response = api_client.get(f'/api/orders/{order.id}/')
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_order_detail_not_found(api_client, user):
+    api_client.force_authenticate(user=user)
+    response = api_client.get('/api/orders/999/')
+    assert response.status_code == 404
+    assert response.data['detail'] == "Not found."

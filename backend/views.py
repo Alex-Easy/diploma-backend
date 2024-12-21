@@ -193,3 +193,20 @@ class OrderListView(APIView):
         orders = Order.objects.filter(user=request.user)
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
+
+
+class OrderDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, order_id, user):
+        try:
+            return Order.objects.get(id=order_id, user=user)
+        except Order.DoesNotExist:
+            return None
+
+    def get(self, request, order_id):
+        order = self.get_object(order_id, request.user)
+        if order is None:
+            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)
