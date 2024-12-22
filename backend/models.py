@@ -15,6 +15,11 @@ class User(AbstractUser):
     company = models.CharField(max_length=255, verbose_name="Компания", help_text="Компания пользователя")
     position = models.CharField(max_length=255, verbose_name="Должность", help_text="Должность пользователя")
 
+    username = models.CharField(max_length=255, unique=True, blank=True, default='')
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
     groups = models.ManyToManyField(Group, related_name='backend_user_groups', blank=True,
                                     verbose_name="Группы", help_text="Группы, к которым принадлежит пользователь")
     user_permissions = models.ManyToManyField(Permission, related_name='backend_user_permissions', blank=True,

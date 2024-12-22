@@ -1,18 +1,31 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.contrib.auth import get_user_model, authenticate
+from rest_framework.exceptions import ValidationError
 from .models import Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Cart, Contact, Order, OrderItem
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
-        model = get_user_model()
-        fields = ['first_name', 'last_name', 'email', 'password', 'company', 'position']
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'password', 'username']
+
+    def validate_email(self, value):
+        """Проверка уникальности email"""
+        if User.objects.filter(email=value).exists():
+            raise ValidationError("Этот email уже занят.")
+        return value
 
     def create(self, validated_data):
-        password = validated_data.pop('password')
-        user = get_user_model().objects.create_user(**validated_data)
-        user.set_password(password)
-        user.save()
+        password = validated_data.pop('password')  # Извлекаем пароль
+
+        # Если username не предоставлен, создаем его из email
+        if 'username' not in validated_data:
+            validated_data['username'] = validated_data['email']
+
+        user = User.objects.create_user(**validated_data)  # Создаем пользователя с переданными данными
+        user.set_password(password)  # Устанавливаем безопасный пароль
+        user.save()  # Сохраняем пользователя
         return user
 
 
