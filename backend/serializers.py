@@ -8,7 +8,7 @@ from .models import Shop, Category, Product, ProductInfo, Parameter, ProductPara
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'password', 'username']
+        fields = ['first_name', 'last_name', 'email', 'password']
 
     def validate_email(self, value):
         """Проверка уникальности email"""
@@ -34,9 +34,16 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField()
 
     def validate(self, data):
+        # Аутентификация пользователя
         user = authenticate(username=data['email'], password=data['password'])
+
         if user is None:
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError({"detail": "Неверный email или пароль."})
+
+        if not user.is_active:
+            raise serializers.ValidationError(
+                {"detail": "Ваш аккаунт не активен. Пожалуйста, обратитесь к администратору."})
+
         return user
 
 
@@ -143,7 +150,7 @@ class CartSerializer(serializers.ModelSerializer):
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
-        fields = ['id', 'user', 'city', 'street', 'house', 'apartment', 'phone']
+        fields = ['id', 'city', 'street', 'house', 'apartment', 'phone']
 
 
 class OrderConfirmationSerializer(serializers.ModelSerializer):

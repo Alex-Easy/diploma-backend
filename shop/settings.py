@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',  # rest api registration
+    'rest_framework',
+    'rest_framework.authtoken',  # rest api registration
     'backend',  # my app registration
 ]
 

@@ -596,4 +596,183 @@
 #     user.refresh_from_db()
 #     assert user.is_active
 
+# Тесты для проверки работы логина
 
+# import pytest
+# from rest_framework import status
+# from django.contrib.auth import get_user_model
+# from rest_framework.authtoken.models import Token
+# from rest_framework.test import APIClient
+#
+#
+# @pytest.fixture
+# def user():
+#     """Фикстура для создания тестового пользователя"""
+#     return get_user_model().objects.create_user(
+#         email="testuser@example.com",
+#         password="testpassword123",
+#         first_name="Test",
+#         last_name="User",
+#         company="TestCompany",
+#         position="TestPosition"
+#     )
+#
+#
+# @pytest.fixture
+# def api_client():
+#     """Фикстура для создания клиента API"""
+#     return APIClient()
+#
+#
+# def test_successful_login(api_client, user):
+#     """Проверка успешного логина с правильными учетными данными"""
+#     url = '/api/login/'  # Укажите свой путь
+#     data = {
+#         "email": user.email,
+#         "password": "testpassword123"
+#     }
+#     response = api_client.post(url, data, format='json')
+#
+#     assert response.status_code == status.HTTP_200_OK
+#     assert 'token' in response.data  # Проверяем наличие токена в ответе
+#
+#
+# def test_invalid_credentials(api_client):
+#     """Проверка логина с неверным email или паролем"""
+#     url = '/api/login/'
+#     data = {
+#         "email": "wronguser@example.com",  # Неверный email
+#         "password": "wrongpassword"
+#     }
+#     response = api_client.post(url, data, format='json')
+#
+#     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+#     assert response.data == {"detail": "Неверные учетные данные."}
+#
+#
+# def test_inactive_user_login(api_client, user):
+#     """Проверка логина для неактивного пользователя"""
+#     user.is_active = False
+#     user.save()
+#
+#     url = '/api/login/'
+#     data = {
+#         "email": user.email,
+#         "password": "testpassword123"
+#     }
+#     response = api_client.post(url, data, format='json')
+#
+#     assert response.status_code == status.HTTP_401_UNAUTHORIZED
+#     assert response.data == {"detail": "Ваш аккаунт не активен. Пожалуйста, обратитесь к администратору."}
+#
+#
+# def test_missing_email_or_password(api_client):
+#     """Проверка на отсутствие email или пароля в запросе"""
+#     url = '/api/login/'
+#
+#     # Отсутствует email
+#     data = {"password": "testpassword123"}
+#     response = api_client.post(url, data, format='json')
+#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+#
+#     # Отсутствует password
+#     data = {"email": "testuser@example.com"}
+#     response = api_client.post(url, data, format='json')
+#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+# Тесты для проверки функционала добавления контактов
+
+# import pytest
+# from rest_framework.test import APIClient
+# from rest_framework.authtoken.models import Token
+# from backend.models import User, Contact
+#
+#
+# @pytest.fixture
+# def api_client():
+#     return APIClient()
+#
+#
+# @pytest.fixture
+# def user():
+#     user = User.objects.create_user(
+#         email="testuser@example.com",
+#         password="strongpassword",
+#         first_name="Test",
+#         last_name="User"
+#     )
+#     return user
+#
+#
+# @pytest.fixture
+# def auth_client(api_client, user):
+#     token, _ = Token.objects.get_or_create(user=user)
+#     api_client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+#     return api_client
+#
+#
+# @pytest.mark.django_db
+# def test_add_contact(auth_client, user):
+#     url = "/api/contacts/"
+#     data = {
+#         "city": "Москва",
+#         "street": "Тверская",
+#         "house": "12",
+#         "apartment": "25",
+#         "phone": "+79991234567"
+#     }
+#
+#     response = auth_client.post(url, data)
+#
+#     assert response.status_code == 201
+#     response_data = response.json()
+#     assert response_data["city"] == "Москва"
+#     assert response_data["street"] == "Тверская"
+#     assert response_data["house"] == "12"
+#     assert response_data["apartment"] == "25"
+#     assert response_data["phone"] == "+79991234567"
+#
+#     # Проверяем, что контакт привязан к пользователю
+#     contact = Contact.objects.get(id=response_data["id"])
+#     assert contact.user == user
+#
+#
+# @pytest.mark.django_db
+# def test_add_contact_unauthenticated(api_client):
+#     url = "/api/contacts/"
+#     data = {
+#         "city": "Москва",
+#         "street": "Тверская",
+#         "house": "12",
+#         "apartment": "25",
+#         "phone": "+79991234567"
+#     }
+#
+#     response = api_client.post(url, data)
+#
+#     assert response.status_code == 401
+#     assert response.json()["detail"] == "Authentication credentials were not provided."
+#
+#
+# @pytest.mark.django_db
+# def test_get_contacts(auth_client, user):
+#     Contact.objects.create(
+#         user=user,
+#         city="Москва",
+#         street="Тверская",
+#         house="12",
+#         apartment="25",
+#         phone="+79991234567"
+#     )
+#
+#     url = "/api/contacts/"
+#     response = auth_client.get(url)
+#
+#     assert response.status_code == 200
+#     response_data = response.json()
+#     assert len(response_data) == 1
+#     assert response_data[0]["city"] == "Москва"
+#     assert response_data[0]["street"] == "Тверская"
+#     assert response_data[0]["house"] == "12"
+#     assert response_data[0]["apartment"] == "25"
+#     assert response_data[0]["phone"] == "+79991234567"

@@ -1,6 +1,7 @@
 import uuid
 from datetime import timedelta
 
+from django.contrib.auth import authenticate
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -74,12 +75,17 @@ class ConfirmEmailView(APIView):
 
 class LoginView(APIView):
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({"токен": token.key}, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(username=email, password=password)
+
+        if user is None:
+            return Response({"detail": "Неверные учетные данные."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Получаем или создаем токен для пользователя
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({"token": token.key}, status=status.HTTP_200_OK)
 
 
 class ImportProductsView(APIView):
