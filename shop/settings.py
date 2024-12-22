@@ -58,7 +58,7 @@ ROOT_URLCONF = 'shop.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # Указываем папку с шаблоном
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -128,9 +128,8 @@ EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # password should be for Google application, not for email
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -138,4 +137,4 @@ REST_FRAMEWORK = {
     ],
 }
 
-
+FRONTEND_URL = "http://127.0.0.1:8000"

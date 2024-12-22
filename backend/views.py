@@ -1,3 +1,10 @@
+import uuid
+from datetime import timedelta
+
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.http import urlencode
+from django.utils.timezone import now
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -5,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
-from .models import Product, Cart, Contact, Order, ProductInfo
+from .models import Product, Cart, Contact, Order, ProductInfo, EmailConfirmation
 from .serializers import UserRegisterSerializer, LoginSerializer, ShopSerializer, CategorySerializer, ProductSerializer, \
     ProductInfoSerializer, ProductListSerializer, CartSerializer, ContactSerializer, OrderConfirmationSerializer, \
     OrderSerializer, OrderStatusUpdateSerializer, ProductDetailSerializer
@@ -15,15 +22,54 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 
+# class RegisterUserView(APIView):
+#     permission_classes = [permissions.AllowAny]
+#
+#     def post(self, request):
+#         serializer = UserRegisterSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({"Сообщение": "Пользователь успешно зарегистрирован!"}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# TODO: реализовать регистрацию пользователя с подтверждением email
+
 class RegisterUserView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response({"Сообщение": "Пользователь успешно зарегистрирован!"}, status=status.HTTP_201_CREATED)
+            user = serializer.save()
+
+            # Генерация токена для подтверждения
+            token = uuid.uuid4()
+            EmailConfirmation.objects.create(user=user, token=token)
+
+            # Формирование ссылки
+            confirmation_url = f"{settings.FRONTEND_URL}{reverse('confirm_email', kwargs={'token': token})}"
+
+            # Отправка письма
+            subject = "Подтверждение электронной почты"
+            message = f"Для подтверждения регистрации перейдите по ссылке: {confirmation_url}"
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+
+            return Response({"message": "Пользователь успешно зарегистрирован! Проверьте свою почту для подтверждения."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConfirmEmailView(APIView):
+    def get(self, request, token):
+        try:
+            confirmation = EmailConfirmation.objects.get(token=token)
+            user = confirmation.user
+            user.is_active = True
+            user.save()
+            confirmation.delete()  # Удаляем токен после подтверждения
+            return Response({"message": "Электронная почта успешно подтверждена!"}, status=status.HTTP_200_OK)
+        except EmailConfirmation.DoesNotExist:
+            return Response({"error": "Неверный или устаревший токен."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):

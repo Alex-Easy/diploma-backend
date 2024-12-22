@@ -440,65 +440,160 @@
 #
 #
 
+# Тест для регистрации пользователя без подтверждения email
 
-import pytest
-from rest_framework import status
-from django.urls import reverse
-from rest_framework.test import APIClient
-from django.contrib.auth import get_user_model
+# import pytest
+# from rest_framework import status
+# from django.urls import reverse
+# from rest_framework.test import APIClient
+# from django.contrib.auth import get_user_model
+#
+#
+# @pytest.fixture
+# def api_client():
+#     """Создание клиента для API, который будет использоваться в тестах."""
+#     return APIClient()
+#
+#
+# @pytest.fixture
+# def user_data():
+#     """Данные для регистрации пользователя."""
+#     return {
+#         "username": "test_user",
+#         "email": "test_user@gmail.com",
+#         "password": "password"
+#     }
+#
+#
+# @pytest.fixture
+# def existing_user():
+#     """Создание существующего пользователя для проверки уникальности email."""
+#     user = get_user_model().objects.create_user(
+#         username="existing_user",
+#         email="test_user@gmail.com",
+#         password="password"
+#     )
+#     return user
+#
+#
+# @pytest.mark.django_db
+# def test_register_user(api_client, user_data):
+#     """Тестируем регистрацию нового пользователя."""
+#     url = reverse('register')  # Используйте правильный URL из вашего `urls.py`
+#
+#     response = api_client.post(url, user_data, format='json')
+#
+#     # Проверка успешной регистрации (статус 201)
+#     assert response.status_code == status.HTTP_201_CREATED
+#
+#     # Проверка, что пользователь был создан в базе данных
+#     user = get_user_model().objects.filter(email=user_data['email']).first()
+#     assert user is not None
+#     assert user.email == user_data['email']
+#     assert user.check_password(user_data['password'])
+#
+#
+# @pytest.mark.django_db
+# def test_register_user_with_existing_email(api_client, user_data, existing_user):
+#     """Тестируем регистрацию с уже существующим email."""
+#     user_data['email'] = existing_user.email  # Используем email существующего пользователя
+#
+#     response = api_client.post(reverse('register'), user_data, format='json')
+#
+#     # Проверка, что мы получили ошибку, так как email уже существует
+#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+#     assert "Этот email уже занят" in str(response.data)
+
+# Тест для регистрации пользователя с подтверждением email (успешный случай)
+
+# import pytest
+# from django.core import mail
+# from rest_framework import status
+# from django.urls import reverse
+# from django.contrib.auth import get_user_model
+#
+#
+# @pytest.mark.django_db
+# def test_user_registration_with_email_confirmation(client):
+#     url = reverse('register_user')  # Укажите правильный URL для регистрации
+#     data = {
+#         'username': 'new_user_test',
+#         'email': 'test@example.com',
+#         'password': 'SecurePassword123'
+#     }
+#
+#     # Отправляем запрос на регистрацию
+#     response = client.post(url, data, format='json')
+#
+#     # Проверка, что ответ успешный
+#     assert response.status_code == status.HTTP_201_CREATED
+#     assert "Пользователь успешно зарегистрирован!" in response.data["Сообщение"]
+#
+#     # Проверка, что письмо отправлено
+#     assert len(mail.outbox) == 1
+#     email = mail.outbox[0]
+#     assert 'Подтверждение электронной почты' in email.subject
+#     assert 'test@example.com' in email.to
+#
+#     # Проверяем, что пользователь не активен до подтверждения email
+#     user = get_user_model().objects.get(email='test@example.com')
+#     assert not user.is_active
+
+# Тест для регистрации пользователя с подтверждением email (кода email уже занят)
+
+# @pytest.mark.django_db
+# def test_user_registration_with_existing_email(client):
+#     url = reverse('register_user')
+#     existing_user = get_user_model().objects.create_user(
+#         username='existing_user',
+#         email='existing@example.com',
+#         password='ExistingPassword123'
+#     )
+#
+#     data = {
+#         'username': 'new_user_test',
+#         'email': 'existing@example.com',
+#         'password': 'SecurePassword123'
+#     }
+#
+#     # Попытка зарегистрировать нового пользователя с уже занятой почтой
+#     response = client.post(url, data, format='json')
+#
+#     # Проверка, что возвращена ошибка с занятым email
+#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+#     assert 'Этот email уже занят.' in response.data['email']
+
+# Тест для регистрации пользователя с подтверждением email (активация пользователя после подтверждения email)
+
+# @pytest.mark.django_db
+# def test_email_confirmation(client):
+#     user = get_user_model().objects.create_user(
+#         username='user_for_confirmation',
+#         email='userforconfirm@example.com',
+#         password='Password1234'
+#     )
+#
+#     # Создаем токен для подтверждения email
+#     token = str(uuid.uuid4())  # Генерация случайного токена для теста
+#     uid = urlsafe_base64_encode(force_bytes(user.pk))
+#
+#     confirmation_url = reverse('confirm_email', kwargs={'token': token})
+#     email = render_to_string('registration/confirmation_email.html', {
+#         'user': user,
+#         'domain': get_current_site(client).domain,
+#         'uid': uid,
+#         'token': token
+#     })
+#
+#     # Отправка подтверждения
+#     response = client.get(confirmation_url)
+#
+#     # Проверка, что запрос на подтверждение email прошел успешно
+#     assert response.status_code == status.HTTP_200_OK
+#     assert "Ваш email успешно подтвержден!" in response.data["message"]
+#
+#     # Проверка, что пользователь активирован
+#     user.refresh_from_db()
+#     assert user.is_active
 
 
-@pytest.fixture
-def api_client():
-    """Создание клиента для API, который будет использоваться в тестах."""
-    return APIClient()
-
-
-@pytest.fixture
-def user_data():
-    """Данные для регистрации пользователя."""
-    return {
-        "username": "test_user",
-        "email": "test_user@gmail.com",
-        "password": "password"
-    }
-
-
-@pytest.fixture
-def existing_user():
-    """Создание существующего пользователя для проверки уникальности email."""
-    user = get_user_model().objects.create_user(
-        username="existing_user",
-        email="test_user@gmail.com",
-        password="password"
-    )
-    return user
-
-
-@pytest.mark.django_db
-def test_register_user(api_client, user_data):
-    """Тестируем регистрацию нового пользователя."""
-    url = reverse('register')  # Используйте правильный URL из вашего `urls.py`
-
-    response = api_client.post(url, user_data, format='json')
-
-    # Проверка успешной регистрации (статус 201)
-    assert response.status_code == status.HTTP_201_CREATED
-
-    # Проверка, что пользователь был создан в базе данных
-    user = get_user_model().objects.filter(email=user_data['email']).first()
-    assert user is not None
-    assert user.email == user_data['email']
-    assert user.check_password(user_data['password'])
-
-
-@pytest.mark.django_db
-def test_register_user_with_existing_email(api_client, user_data, existing_user):
-    """Тестируем регистрацию с уже существующим email."""
-    user_data['email'] = existing_user.email  # Используем email существующего пользователя
-
-    response = api_client.post(reverse('register'), user_data, format='json')
-
-    # Проверка, что мы получили ошибку, так как email уже существует
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "Этот email уже занят" in str(response.data)

@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -5,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import Group
 from django.contrib.auth.models import Permission
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -185,3 +187,15 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"Cart item for {self.user} - {self.product.name}"
+
+
+User = get_user_model()
+
+
+class EmailConfirmation(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="email_confirmation")
+    token = models.UUIDField(default=uuid.uuid4, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Токен подтверждения для {self.user.email}"
