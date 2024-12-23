@@ -757,7 +757,6 @@
 # @pytest.mark.django_db
 # def test_get_contacts(auth_client, user):
 #     Contact.objects.create(
-#         user=user,
 #         city="Москва",
 #         street="Тверская",
 #         house="12",
@@ -776,3 +775,222 @@
 #     assert response_data[0]["house"] == "12"
 #     assert response_data[0]["apartment"] == "25"
 #     assert response_data[0]["phone"] == "+79991234567"
+
+# Тест для получения данных контактов
+
+# @pytest.mark.django_db
+# def test_get_contacts_authenticated(auth_client, user):
+#     # Создаем тестовый контакт
+#     Contact.objects.create(
+#         city="Москва",
+#         street="Тверская",
+#         house="12",
+#         apartment="25",
+#         phone="+79991234567"
+#     )
+#
+#     # Отправляем запрос
+#     url = "/api/contacts/"
+#     response = auth_client.get(url)
+#
+#     # Проверяем успешность ответа
+#     assert response.status_code == 200
+#     response_data = response.json()
+#
+#     # Проверяем данные контакта
+#     assert len(response_data) == 1
+#     assert response_data[0]["city"] == "Москва"
+#     assert response_data[0]["street"] == "Тверская"
+#     assert response_data[0]["house"] == "12"
+#     assert response_data[0]["apartment"] == "25"
+#     assert response_data[0]["phone"] == "+79991234567"
+#
+#
+# @pytest.mark.django_db
+# def test_get_contacts_unauthenticated(api_client):
+#     url = "/api/contacts/"
+#     response = api_client.get(url)
+#
+#     # Проверяем статус неавторизованного запроса
+#     assert response.status_code == 401
+#     assert response.json()["detail"] == "Authentication credentials were not provided."
+
+# Тест на изменение информации контакта
+
+# @pytest.mark.django_db
+# def test_update_contact_authenticated(auth_client, user):
+#     # Создаем тестовый контакт
+#     contact = Contact.objects.create(
+#         city="Москва",
+#         street="Тверская",
+#         house="12",
+#         apartment="25",
+#         phone="+79991234567"
+#     )
+#
+#     # Данные для обновления
+#     updated_data = {
+#         "city": "Санкт-Петербург",
+#         "street": "Невский проспект",
+#         "house": "25",
+#         "apartment": "45",
+#         "phone": "+79990001122"
+#     }
+#
+#     # Отправляем PUT-запрос
+#     url = f"/api/contacts/{contact.id}/"
+#     response = auth_client.put(url, data=updated_data, format="json")
+#
+#     # Проверяем успешность ответа
+#     assert response.status_code == 200
+#     response_data = response.json()
+#
+#     # Проверяем, что данные обновлены
+#     assert response_data["city"] == "Санкт-Петербург"
+#     assert response_data["street"] == "Невский проспект"
+#     assert response_data["house"] == "25"
+#     assert response_data["apartment"] == "45"
+#     assert response_data["phone"] == "+79990001122"
+#
+#
+# @pytest.mark.django_db
+# def test_update_contact_unauthenticated(api_client):
+#     # Попытка обновить контакт без авторизации
+#     url = "/api/contacts/1/"
+#     updated_data = {
+#         "city": "Санкт-Петербург",
+#         "street": "Невский проспект",
+#         "house": "25",
+#         "apartment": "45",
+#         "phone": "+79990001122"
+#     }
+#     response = api_client.put(url, data=updated_data, format="json")
+#
+#     # Проверяем статус неавторизованного запроса
+#     assert response.status_code == 401
+#     assert response.json()["detail"] == "Authentication credentials were not provided."
+#
+#
+# @pytest.mark.django_db
+# def test_update_contact_not_found(auth_client):
+#     # Попытка обновить несуществующий контакт
+#     url = "/api/contacts/999/"
+#     updated_data = {
+#         "city": "Санкт-Петербург",
+#         "street": "Невский проспект",
+#         "house": "25",
+#         "apartment": "45",
+#         "phone": "+79990001122"
+#     }
+#     response = auth_client.put(url, data=updated_data, format="json")
+#
+#     # Проверяем статус ошибки "Не найдено"
+#     assert response.status_code == 404
+#     assert response.json()["detail"] == "Not found."
+
+# Тест на удаление контакта
+
+# import pytest
+# from rest_framework.test import APIClient
+# from backend.models import Contact, User
+#
+# @pytest.mark.django_db
+# def test_delete_contact_authenticated(auth_client, user):
+#     # Создаем тестовый контакт
+#     contact = Contact.objects.create(
+#         city="Москва",
+#         street="Тверская",
+#         house="12",
+#         apartment="25",
+#         phone="+79991234567"
+#     )
+#
+#     # Удаляем контакт
+#     url = f"/api/contacts/{contact.id}/"
+#     response = auth_client.delete(url)
+#
+#     # Проверяем статус успешного удаления
+#     assert response.status_code == 204
+#
+#     # Проверяем, что контакт удален из базы
+#     assert not Contact.objects.filter(id=contact.id).exists()
+#
+#
+# @pytest.mark.django_db
+# def test_delete_contact_unauthenticated(api_client):
+#     # Создаем тестового пользователя и контакт
+#     user = User.objects.create_user(email="user@example.com", password="password123")
+#     contact = Contact.objects.create(
+#         city="Москва",
+#         street="Тверская",
+#         house="12",
+#         apartment="25",
+#         phone="+79991234567"
+#     )
+#
+#     # Пытаемся удалить контакт без авторизации
+#     url = f"/api/contacts/{contact.id}/"
+#     response = api_client.delete(url)
+#
+#     # Проверяем, что запрос без авторизации возвращает 401
+#     assert response.status_code == 401
+#     assert response.json()["detail"] == "Authentication credentials were not provided."
+#
+#
+# @pytest.mark.django_db
+# def test_delete_contact_not_found(auth_client):
+#     # Пытаемся удалить несуществующий контакт
+#     url = "/api/contacts/999/"
+#     response = auth_client.delete(url)
+#
+#     # Проверяем, что запрос возвращает 404
+#     assert response.status_code == 404
+#     assert response.json()["detail"] == "Not found."
+
+# Тест на получение информации о юзере / пользователе
+
+# import pytest
+# from rest_framework.test import APIClient
+# from backend.models import User
+#
+#
+# @pytest.fixture
+# def user(db):
+#     return User.objects.create_user(
+#         email="a.legkovsky@gmail.com",
+#         password="securepassword",
+#         first_name="Алексей",
+#         last_name="Легковский"
+#     )
+#
+#
+# @pytest.fixture
+# def auth_client(user):
+#     client = APIClient()
+#     client.force_authenticate(user=user)
+#     return client
+#
+#
+# @pytest.fixture
+# def api_client():
+#     return APIClient()
+#
+#
+# @pytest.mark.django_db
+# def test_get_user_authenticated(auth_client, user):
+#     url = "/api/user/"
+#     response = auth_client.get(url)
+#     assert response.status_code == 200
+#     data = response.json()
+#     assert data["id"] == user.id
+#     assert data["email"] == user.email
+#     assert data["first_name"] == user.first_name
+#     assert data["last_name"] == user.last_name
+#
+#
+# @pytest.mark.django_db
+# def test_get_user_unauthenticated(api_client):
+#     url = "/api/user/"
+#     response = api_client.get(url)
+#     assert response.status_code == 401
+#     assert response.json()["detail"] == "Authentication credentials were not provided."

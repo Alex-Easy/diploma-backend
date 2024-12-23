@@ -16,7 +16,7 @@ from rest_framework.authtoken.models import Token
 from .models import Product, Cart, Contact, Order, ProductInfo, EmailConfirmation
 from .serializers import UserRegisterSerializer, LoginSerializer, ShopSerializer, CategorySerializer, ProductSerializer, \
     ProductInfoSerializer, ProductListSerializer, CartSerializer, ContactSerializer, OrderConfirmationSerializer, \
-    OrderSerializer, OrderStatusUpdateSerializer, ProductDetailSerializer
+    OrderSerializer, OrderStatusUpdateSerializer, ProductDetailSerializer, UserSerializer
 from django.core.exceptions import ValidationError
 import yaml
 from django.core.mail import send_mail
@@ -33,8 +33,6 @@ from django.conf import settings
 #             return Response({"Сообщение": "Пользователь успешно зарегистрирован!"}, status=status.HTTP_201_CREATED)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# TODO: реализовать регистрацию пользователя с подтверждением email
 
 class RegisterUserView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -56,7 +54,9 @@ class RegisterUserView(APIView):
             message = f"Для подтверждения регистрации перейдите по ссылке: {confirmation_url}"
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
-            return Response({"message": "Пользователь успешно зарегистрирован! Проверьте свою почту для подтверждения."}, status=status.HTTP_201_CREATED)
+            return Response(
+                {"message": "Пользователь успешно зарегистрирован! Проверьте свою почту для подтверждения."},
+                status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -86,6 +86,14 @@ class LoginView(APIView):
         token, created = Token.objects.get_or_create(user=user)
 
         return Response({"token": token.key}, status=status.HTTP_200_OK)
+
+
+class UserDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
 
 
 class ImportProductsView(APIView):

@@ -47,6 +47,12 @@ class LoginSerializer(serializers.Serializer):
         return user
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name']
+
+
 class ImportSerializer(serializers.Serializer):
     file = serializers.FileField()
 
