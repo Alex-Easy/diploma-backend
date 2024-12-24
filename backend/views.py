@@ -133,6 +133,31 @@ class PasswordResetView(APIView):
         return Response({"detail": "Инструкции по сбросу пароля отправлены на email."}, status=status.HTTP_200_OK)
 
 
+class PasswordResetConfirmView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        token = request.data.get('token')
+
+        if not email or not password or not token:
+            return Response({"detail": "Необходимо указать email, password и token."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"detail": "Пользователь с таким email не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Проверка токена
+        if not default_token_generator.check_token(user, token):
+            return Response({"detail": "Токен недействителен или истек."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Установка нового пароля
+        user.set_password(password)
+        user.save()
+        return Response({"detail": "Пароль успешно изменён."}, status=status.HTTP_200_OK)
+
+
 class ImportProductsView(APIView):
     def post(self, request):
         if not request.user.is_authenticated:

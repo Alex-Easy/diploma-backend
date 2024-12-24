@@ -1132,3 +1132,7 @@
 #     response = client.post(url, data)
 #     assert response.status_code == status.HTTP_400_BAD_REQUEST
 #     assert response.data["detail"] == "Необходимо указать email, password и token."
+
+
+
+
