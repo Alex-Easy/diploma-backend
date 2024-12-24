@@ -1041,3 +1041,94 @@
 #         self.user.refresh_from_db()
 #         self.assertEqual(self.user.first_name, "PartiallyUpdated")
 #         self.assertEqual(self.user.last_name, "User")  # Остальные данные не изменились
+
+# Тесты на сброс пароля
+
+# import pytest
+# from django.contrib.auth.models import User
+# from django.contrib.auth.tokens import default_token_generator
+# from rest_framework.test import APIClient
+# from rest_framework import status
+#
+#
+# @pytest.fixture
+# def create_user(db):
+#     """Фикстура для создания пользователя."""
+#     return User.objects.create_user(
+#         email="testuser@example.com",
+#         password="securepassword"
+#     )
+#
+#
+# @pytest.fixture
+# def client():
+#     """Фикстура для создания клиента API."""
+#     return APIClient()
+#
+#
+# @pytest.fixture
+# def reset_token(create_user):
+#     """Фикстура для создания токена сброса пароля."""
+#     return default_token_generator.make_token(create_user)
+#
+#
+# @pytest.mark.django_db
+# def test_password_reset_confirm_success(client, create_user, reset_token):
+#     """Тест успешного подтверждения сброса пароля."""
+#     url = "/api/password-reset-confirm/"
+#     data = {
+#         "email": create_user.email,
+#         "password": "newsecurepassword",
+#         "token": reset_token,
+#     }
+#
+#     response = client.post(url, data)
+#     assert response.status_code == status.HTTP_200_OK
+#     assert response.data["detail"] == "Пароль успешно изменён."
+#
+#     # Проверяем, что новый пароль работает
+#     login_successful = client.login(username=create_user.email, password="newsecurepassword")
+#     assert login_successful
+#
+#
+# @pytest.mark.django_db
+# def test_password_reset_confirm_invalid_token(client, create_user):
+#     """Тест подтверждения сброса пароля с неверным токеном."""
+#     url = "/api/password-reset-confirm/"
+#     data = {
+#         "email": create_user.email,
+#         "password": "newsecurepassword",
+#         "token": "invalid-token",
+#     }
+#
+#     response = client.post(url, data)
+#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+#     assert response.data["detail"] == "Токен недействителен или истек."
+#
+#
+# @pytest.mark.django_db
+# def test_password_reset_confirm_user_not_found(client, reset_token):
+#     """Тест подтверждения сброса пароля для несуществующего пользователя."""
+#     url = "/api/password-reset-confirm/"
+#     data = {
+#         "email": "nonexistent@example.com",
+#         "password": "newsecurepassword",
+#         "token": reset_token,
+#     }
+#
+#     response = client.post(url, data)
+#     assert response.status_code == status.HTTP_404_NOT_FOUND
+#     assert response.data["detail"] == "Пользователь с таким email не найден."
+#
+#
+# @pytest.mark.django_db
+# def test_password_reset_confirm_missing_data(client):
+#     """Тест подтверждения сброса пароля с отсутствующими данными."""
+#     url = "/api/password-reset-confirm/"
+#     data = {
+#         "email": "testuser@example.com",
+#     }
+#
+#     response = client.post(url, data)
+#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+#     assert response.data["detail"] == "Необходимо указать email, password и token."

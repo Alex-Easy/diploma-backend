@@ -2,6 +2,8 @@ import uuid
 from datetime import timedelta
 
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -107,6 +109,28 @@ class UserUpdateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"detail": "Пользователь с таким email не найден."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Генерация токена сброса пароля
+        token = default_token_generator.make_token(user)
+        reset_link = f"http://example.com/password-reset-confirm/{user.pk}/{token}/"  # Ссылка для подтверждения
+
+        # Отправка email
+        send_mail(
+            subject="Сброс пароля",
+            message=f"Ваш токен сброса пароля: {reset_link}",
+            from_email="no-reply@example.com",
+            recipient_list=[user.email],
+        )
+        return Response({"detail": "Инструкции по сбросу пароля отправлены на email."}, status=status.HTTP_200_OK)
 
 
 class ImportProductsView(APIView):
