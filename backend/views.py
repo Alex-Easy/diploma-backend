@@ -96,6 +96,19 @@ class UserDetailView(APIView):
         return Response(serializer.data)
 
 
+class UserUpdateView(APIView):
+    permission_classes = [IsAuthenticated]  # Только для аутентифицированных пользователей
+
+    def post(self, request):
+        user = request.user  # Текущий пользователь
+        serializer = UserSerializer(user, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ImportProductsView(APIView):
     def post(self, request):
         if not request.user.is_authenticated:
