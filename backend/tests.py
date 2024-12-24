@@ -994,3 +994,50 @@
 #     response = api_client.get(url)
 #     assert response.status_code == 401
 #     assert response.json()["detail"] == "Authentication credentials were not provided."
+
+# Тест на обновление информации о юзере / пользователе
+
+# from rest_framework.test import APITestCase
+# from rest_framework import status
+# from django.contrib.auth.models import User
+#
+#
+# class UserUpdateTestCase(APITestCase):
+#     def setUp(self):
+#         self.user = User.objects.create_user(
+#             email='testuser@example.com',
+#             password='testpassword',
+#             first_name='Test',
+#             last_name='User'
+#         )
+#         self.client.login(username=self.user.email, password='testpassword')  # Аутентификация
+#
+#     def test_update_user(self):
+#         url = '/api/user/update/'
+#         data = {
+#             "email": "updateduser@example.com",
+#             "password": "newpassword",
+#             "first_name": "Updated",
+#             "last_name": "UserUpdated"
+#         }
+#         response = self.client.post(url, data)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#
+#         # Проверяем обновление данных
+#         self.user.refresh_from_db()
+#         self.assertEqual(self.user.email, "updateduser@example.com")
+#         self.assertEqual(self.user.first_name, "Updated")
+#         self.assertEqual(self.user.last_name, "UserUpdated")
+#
+#     def test_partial_update_user(self):
+#         url = '/api/user/update/'
+#         data = {
+#             "first_name": "PartiallyUpdated"
+#         }
+#         response = self.client.post(url, data)
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#
+#         # Проверяем обновление только имени
+#         self.user.refresh_from_db()
+#         self.assertEqual(self.user.first_name, "PartiallyUpdated")
+#         self.assertEqual(self.user.last_name, "User")  # Остальные данные не изменились
