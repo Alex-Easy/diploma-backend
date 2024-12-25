@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
-from .models import Product, Cart, Contact, Order, ProductInfo, EmailConfirmation
+from .models import Product, Cart, Contact, Order, ProductInfo, EmailConfirmation, Category
 from .serializers import UserRegisterSerializer, LoginSerializer, ShopSerializer, CategorySerializer, ProductSerializer, \
     ProductInfoSerializer, ProductListSerializer, CartSerializer, ContactSerializer, OrderConfirmationSerializer, \
     OrderSerializer, OrderStatusUpdateSerializer, ProductDetailSerializer, UserSerializer
@@ -160,56 +160,34 @@ class PasswordResetConfirmView(APIView):
 
 class ImportProductsView(APIView):
     def post(self, request):
-        if not request.user.is_authenticated:
-            return Response({'Status': False, 'Error': 'Пользователь не авторизован'}, status=status.HTTP_403_FORBIDDEN)
-
-        file = request.FILES.get('file')
-        if file is None:
-            return Response({'Status': False, 'Error': 'Нет загруженного файла'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            data = yaml.safe_load(file.read())
-        except yaml.YAMLError as e:
-            return Response({'Status': False, 'Error': f'Ошибка при разборе файла YAML: {str(e)}'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            with open('data/shop.yaml', 'r', encoding='utf-8') as file:
+                data = yaml.safe_load(file)
 
-        # Валидация и импорт данных магазина
-        shop_data = {'name': data['shop']}
-        shop_serializer = ShopSerializer(data=shop_data)
-        if not shop_serializer.is_valid():
-            return Response({'Status': False, 'Error': shop_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        shop = shop_serializer.save()
+            # Импортируем категории
+            categories = data.get('categories', [])
+            for category_data in categories:
+                Category.objects.get_or_create(shop_id=category_data['id'], name=category_data['name'])
 
-        # Валидация и импорт категорий
-        for category_data in data['categories']:
-            category_serializer = CategorySerializer(data=category_data)
-            if not category_serializer.is_valid():
-                return Response({'Status': False, 'Error': category_serializer.errors},
-                                status=status.HTTP_400_BAD_REQUEST)
-            category_serializer.save()
+            # Импортируем товары
+            products = data.get('goods', [])
+            for product_data in products:
+                category = Category.objects.get(shop_id=product_data['category'])
+                product = Product(
+                    category=category,
+                    model=product_data['model'],
+                    name=product_data['name'],
+                    price=product_data['price'],
+                    price_rrc=product_data['price_rrc'],
+                    quantity=product_data['quantity'],
+                    parameters=product_data['parameters']
+                )
+                product.save()
 
-        # Валидация и импорт продуктов
-        for product_data in data['goods']:
-            product_serializer = ProductSerializer(data=product_data)
-            if not product_serializer.is_valid():
-                return Response({'Status': False, 'Error': product_serializer.errors},
-                                status=status.HTTP_400_BAD_REQUEST)
-            product = product_serializer.save()
+            return Response({"message": "Products imported successfully"}, status=status.HTTP_201_CREATED)
 
-            product_info_data = {
-                'product': product.id,
-                'shop': shop.id,
-                'quantity': product_data['quantity'],
-                'price': product_data['price'],
-                'price_rrc': product_data['price_rrc']
-            }
-            product_info_serializer = ProductInfoSerializer(data=product_info_data)
-            if not product_info_serializer.is_valid():
-                return Response({'Status': False, 'Error': product_info_serializer.errors},
-                                status=status.HTTP_400_BAD_REQUEST)
-            product_info_serializer.save()
-
-        return Response({'Status': True, 'Message': 'Товары успешно импортированы'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductListView(APIView):
