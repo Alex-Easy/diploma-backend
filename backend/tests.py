@@ -1140,6 +1140,7 @@
 # from rest_framework.test import APIClient
 # from rest_framework.reverse import reverse
 # from rest_framework import status
+# from backend.models import Shop, Category, Product
 #
 #
 # @pytest.mark.django_db
@@ -1148,31 +1149,66 @@
 #
 #     # Тестовые данные в формате YAML
 #     shop_yaml_content = """
-#     shop: Тестовый магазин
 #     categories:
 #       - id: 1
 #         name: Категория 1
+#       - id: 2
+#         name: Категория 2
 #     goods:
 #       - id: 1001
 #         category: 1
-#         model: Модель 1  # Добавлено поле model
+#         model: Модель 1
 #         name: Товар 1
 #         price: 1000
 #         price_rrc: 1200
 #         quantity: 5
 #         parameters:
 #           "Параметр 1": "Значение 1"
+#       - id: 1002
+#         category: 2
+#         model: Модель 2
+#         name: Товар 2
+#         price: 2000
+#         price_rrc: 2400
+#         quantity: 3
+#         parameters:
+#           "Параметр 2": "Значение 2"
 #     """
 #
 #     # Мокаем open для чтения тестового YAML
 #     with patch("builtins.open", mock_open(read_data=shop_yaml_content)):
 #         url = reverse('import_products')  # Имя URL из urls.py
-#         response = client.post(url, {}, format='json')
-#
-#         # Диагностика
-#         print("Response status code:", response.status_code)
-#         print("Response data:", response.json())
+#         response = client.post(url, {}, format='json')  # Пустой запрос, так как данные берутся из файла
 #
 #         # Проверяем успешность импорта
 #         assert response.status_code == status.HTTP_201_CREATED
 #         assert response.json() == {"message": "Products imported successfully"}
+#
+#         # Проверяем, что категории были созданы
+#         shop_1 = Shop.objects.get(id=1)  # Проверяем, что магазин с id=1 был создан
+#         category_1 = Category.objects.get(shop_id=shop_1, name="Категория 1")
+#         assert category_1.name == "Категория 1"
+#
+#         shop_2 = Shop.objects.get(id=2)  # Проверяем, что магазин с id=2 был создан
+#         category_2 = Category.objects.get(shop_id=shop_2, name="Категория 2")
+#         assert category_2.name == "Категория 2"
+#
+#         # Проверяем, что товары были созданы и привязаны к соответствующим категориям
+#         # Используем name товара, чтобы избежать зависимости от id
+#         product_1 = Product.objects.get(name="Товар 1")
+#         assert product_1.model == "Модель 1"
+#         assert product_1.name == "Товар 1"
+#         assert product_1.price == 1000
+#         assert product_1.price_rrc == 1200
+#         assert product_1.quantity == 5
+#         assert product_1.parameters == {"Параметр 1": "Значение 1"}
+#         assert product_1.category == category_1
+#
+#         product_2 = Product.objects.get(name="Товар 2")
+#         assert product_2.model == "Модель 2"
+#         assert product_2.name == "Товар 2"
+#         assert product_2.price == 2000
+#         assert product_2.price_rrc == 2400
+#         assert product_2.quantity == 3
+#         assert product_2.parameters == {"Параметр 2": "Значение 2"}
+#         assert product_2.category == category_2

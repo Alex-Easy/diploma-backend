@@ -33,28 +33,13 @@ class User(AbstractUser):
 
 
 class Shop(models.Model):
-    name = models.CharField(max_length=255, unique=True, verbose_name='Название магазина',
-                            help_text='Уникальное название магазина')
-    url = models.URLField(verbose_name='URL магазина', help_text='Адрес магазина в интернете')
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Магазин'
-        verbose_name_plural = 'Магазины'
+    name = models.CharField(max_length=100)
+    url = models.URLField(blank=True, null=True)  # Сделать поле необязательным
 
 
 class Category(models.Model):
+    shop_id = models.ForeignKey(Shop, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    shop_id = models.IntegerField(unique=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Категория'
-        verbose_name_plural = 'Категории'
 
 
 class Product(models.Model):

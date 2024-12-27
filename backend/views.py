@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
-from .models import Product, Cart, Contact, Order, ProductInfo, EmailConfirmation, Category
+from .models import Product, Cart, Contact, Order, ProductInfo, EmailConfirmation, Category, Shop
 from .serializers import UserRegisterSerializer, LoginSerializer, ShopSerializer, CategorySerializer, ProductSerializer, \
     ProductInfoSerializer, ProductListSerializer, CartSerializer, ContactSerializer, OrderConfirmationSerializer, \
     OrderSerializer, OrderStatusUpdateSerializer, ProductDetailSerializer, UserSerializer
@@ -167,27 +167,52 @@ class ImportProductsView(APIView):
             # Импортируем категории
             categories = data.get('categories', [])
             for category_data in categories:
-                Category.objects.get_or_create(shop_id=category_data['id'], name=category_data['name'])
+                try:
+                    # Получаем или создаем объект Shop
+                    shop, created = Shop.objects.get_or_create(id=category_data['id'])
+
+                    # Создаем категорию, используя поле shop_id
+                    category, created = Category.objects.get_or_create(
+                        shop_id=shop,  # Используем shop_id, так как в модели именно это поле
+                        name=category_data['name']
+                    )
+
+                except Exception as e:
+                    return Response({"error": f"Error creating category: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Импортируем товары
             products = data.get('goods', [])
             for product_data in products:
-                category = Category.objects.get(shop_id=product_data['category'])
-                product = Product(
-                    category=category,
-                    model=product_data['model'],
-                    name=product_data['name'],
-                    price=product_data['price'],
-                    price_rrc=product_data['price_rrc'],
-                    quantity=product_data['quantity'],
-                    parameters=product_data['parameters']
-                )
-                product.save()
+                try:
+                    # Находим категорию по shop_id, используя filter(), чтобы избежать множественных результатов
+                    categories = Category.objects.filter(shop_id=product_data['category'])
+
+                    if categories.exists():
+                        category = categories.first()  # Получаем первую категорию
+                    else:
+                        return Response({"error": f"Category with shop_id {product_data['category']} does not exist."},
+                                        status=status.HTTP_400_BAD_REQUEST)
+
+                    # Создаем товар
+                    product = Product(
+                        category=category,
+                        model=product_data['model'],
+                        name=product_data['name'],
+                        price=product_data['price'],
+                        price_rrc=product_data['price_rrc'],
+                        quantity=product_data['quantity'],
+                        parameters=product_data['parameters']
+                    )
+                    product.save()
+
+                except Exception as e:
+                    return Response({"error": f"Error creating product: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
             return Response({"message": "Products imported successfully"}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"An error occurred during the import: {str(e)}"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductListView(APIView):
@@ -336,13 +361,13 @@ class OrderStatusUpdateView(APIView):
 
 
 class ProductDetailView(APIView):
-    def get(self, request, product_id):
+    def get(self, request, id):  # Используем id, так как в URL мы передаем id
         try:
-            product_info = ProductInfo.objects.get(product__id=product_id)
-            serializer = ProductDetailSerializer(product_info)
-            return Response(serializer.data)
-        except ProductInfo.DoesNotExist:
-            return Response({"detail": "Продукт не найден."}, status=status.HTTP_404_NOT_FOUND)
+            product = Product.objects.get(id=id)
+            serializer = ProductSerializer(product)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Product.DoesNotExist:
+            return Response({"detail": "Продукт не найден."}, status=status.HTTP_404_NOT_FOUND)
 
 
 def send_confirmation_email(user_email, order_id):
