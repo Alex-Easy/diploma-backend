@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import RegisterUserView, LoginView, ImportProductsView, ProductListView, CartView, ContactListView, \
     ContactDetailView, OrderConfirmationView, OrderListView, OrderDetailView, OrderStatusUpdateView, ProductDetailView, \
-    ConfirmEmailView, UserDetailView, UserUpdateView, PasswordResetView, PasswordResetConfirmView
+    ConfirmEmailView, UserDetailView, UserUpdateView, PasswordResetView, PasswordResetConfirmView, CategoryListView
 
 urlpatterns = [
     path('register/', RegisterUserView.as_view(), name='register'),
@@ -14,6 +14,7 @@ urlpatterns = [
     path('password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('import_products/', ImportProductsView.as_view(), name='import_products'),
     path('products/', ProductListView.as_view(), name='product_list'),
+    path('categories/', CategoryListView.as_view(), name='category_list'),
     path('cart/', CartView.as_view(), name='cart'),
     path('contacts/', ContactListView.as_view(), name='contact_list'),
     path('contacts/<int:contact_id>/', ContactDetailView.as_view(), name='contact_detail'),

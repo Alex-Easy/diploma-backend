@@ -1212,3 +1212,29 @@
 #         assert product_2.quantity == 3
 #         assert product_2.parameters == {"Параметр 2": "Значение 2"}
 #         assert product_2.category == category_2
+
+# Тест дял проверки получения категорий по магазину
+
+# import pytest
+# from rest_framework.test import APIClient
+# from rest_framework import status
+# from .models import Category, Shop
+#
+#
+# @pytest.mark.django_db
+# def test_get_categories():
+#     # Создаем тестовые данные
+#     shop = Shop.objects.create(id=1, name="Test Shop")
+#     Category.objects.create(id=1, name="Category 1", shop_id=shop)
+#     Category.objects.create(id=2, name="Category 2", shop_id=shop)
+#
+#     client = APIClient()
+#
+#     # Отправляем запрос на получение списка категорий
+#     response = client.get('/api/categories/')
+#
+#     # Проверяем успешный ответ
+#     assert response.status_code == status.HTTP_200_OK
+#     assert len(response.json()) == 2  # Должно быть 2 категории
+#     assert response.json()[0]['name'] == "Category 1"
+#     assert response.json()[1]['name'] == "Category 2"

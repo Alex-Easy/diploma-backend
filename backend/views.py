@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.timezone import now
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -220,6 +220,11 @@ class ProductListView(APIView):
         products = Product.objects.all()
         serializer = ProductListSerializer(products, many=True)
         return Response(serializer.data)
+
+
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 
 class CartView(APIView):

@@ -116,7 +116,7 @@ class ShopSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ('id', 'name', 'shop_id')
+        fields = ['id', 'name', 'shop_id']
 
 
 class ProductSerializer(serializers.ModelSerializer):
