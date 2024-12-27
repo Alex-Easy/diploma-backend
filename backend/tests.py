@@ -1133,6 +1133,46 @@
 #     assert response.status_code == status.HTTP_400_BAD_REQUEST
 #     assert response.data["detail"] == "Необходимо указать email, password и token."
 
+# Тест для проверки импорта данных из shop.yaml
 
-
-
+# import pytest
+# from unittest.mock import patch, mock_open
+# from rest_framework.test import APIClient
+# from rest_framework.reverse import reverse
+# from rest_framework import status
+#
+#
+# @pytest.mark.django_db
+# def test_import_products_successful():
+#     client = APIClient()
+#
+#     # Тестовые данные в формате YAML
+#     shop_yaml_content = """
+#     shop: Тестовый магазин
+#     categories:
+#       - id: 1
+#         name: Категория 1
+#     goods:
+#       - id: 1001
+#         category: 1
+#         model: Модель 1  # Добавлено поле model
+#         name: Товар 1
+#         price: 1000
+#         price_rrc: 1200
+#         quantity: 5
+#         parameters:
+#           "Параметр 1": "Значение 1"
+#     """
+#
+#     # Мокаем open для чтения тестового YAML
+#     with patch("builtins.open", mock_open(read_data=shop_yaml_content)):
+#         url = reverse('import_products')  # Имя URL из urls.py
+#         response = client.post(url, {}, format='json')
+#
+#         # Диагностика
+#         print("Response status code:", response.status_code)
+#         print("Response data:", response.json())
+#
+#         # Проверяем успешность импорта
+#         assert response.status_code == status.HTTP_201_CREATED
+#         assert response.json() == {"message": "Products imported successfully"}
