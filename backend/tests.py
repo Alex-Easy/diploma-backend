@@ -1241,13 +1241,18 @@
 
 # Тест для проверки поиска товаров
 
-# from rest_framework.test import APITestCase
+# import pytest
+# from rest_framework.test import APIClient
 # from rest_framework import status
 # from backend.models import Shop, Category, Product
 #
 #
-# class ProductSearchTestCase(APITestCase):
-#     def setUp(self):
+# @pytest.mark.django_db
+# class TestProductSearch:
+#     @pytest.fixture(autouse=True)
+#     def setup(self):
+#         self.client = APIClient()
+#
 #         # Создаем магазин
 #         self.shop = Shop.objects.create(name="Связной", url="https://svyaznoy.ru")
 #
@@ -1280,24 +1285,22 @@
 #     def test_search_by_category_and_shop(self):
 #         # Выполняем поиск товаров по категории "Смартфоны" и магазину "Связной"
 #         response = self.client.get(self.search_url, {"category_id": self.category1.id, "shop_id": self.shop.id})
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         assert response.status_code == status.HTTP_200_OK
 #
 #         # Проверяем, что в ответе только товары из нужной категории и магазина
 #         products = response.json()
-#         self.assertEqual(len(products), 1)  # Только 1 товар в этой категории и магазине
-#         self.assertEqual(products[0]["name"], "Смартфон Apple iPhone XS Max")
+#         assert len(products) == 1  # Только 1 товар в этой категории и магазине
+#         assert products[0]["name"] == "Смартфон Apple iPhone XS Max"
 #
 #     def test_search_empty_results(self):
 #         # Поиск товаров в несуществующей категории
 #         response = self.client.get(self.search_url, {"category_id": 999, "shop_id": self.shop.id})
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         assert response.status_code == status.HTTP_200_OK
 #         products = response.json()
-#         self.assertEqual(len(products), 0)  # Никаких товаров нет в категории 999
+#         assert len(products) == 0  # Никаких товаров нет в категории 999
 #
 #         # Поиск товаров в несуществующем магазине
 #         response = self.client.get(self.search_url, {"category_id": self.category1.id, "shop_id": 999})
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         assert response.status_code == status.HTTP_200_OK
 #         products = response.json()
-#         self.assertEqual(len(products), 0)  # Никаких товаров нет в магазине 999
-
-
+#         assert len(products) == 0  # Никаких товаров нет в магазине 999
