@@ -126,6 +126,12 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ('id', 'category', 'model', 'name', 'price', 'price_rrc', 'quantity', 'parameters')
 
+    def get_category(self, obj):
+        return {
+            "id": obj.category.id,
+            "name": obj.category.name,
+        }
+
 
 class ProductInfoSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())

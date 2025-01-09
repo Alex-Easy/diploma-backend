@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
+from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -225,6 +226,44 @@ class ProductListView(APIView):
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+
+class ProductSearchView(APIView):
+    def get(self, request):
+        try:
+            # Получаем параметры для фильтрации
+            category_id = request.GET.get('category_id')  # ID категории для фильтрации
+            shop_id = request.GET.get('shop_id')  # ID магазина для фильтрации
+
+            # Стартуем запрос к продуктам
+            products = Product.objects.all()
+
+            # Фильтруем по категории
+            if category_id:
+                products = products.filter(category_id=category_id)
+
+            # Фильтруем по магазину
+            if shop_id:
+                products = products.filter(category__shop_id=shop_id)
+
+            # Собираем результаты в список
+            result = []
+            for product in products:
+                result.append({
+                    'id': product.id,
+                    'name': product.name,
+                    'model': product.model,
+                    'price': product.price,
+                    'price_rrc': product.price_rrc,
+                    'quantity': product.quantity,
+                    'category': product.category.name if product.category else None,
+                    'shop': product.category.shop_id.name if product.category and product.category.shop_id else None,
+                })
+
+            return Response(result, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CartView(APIView):

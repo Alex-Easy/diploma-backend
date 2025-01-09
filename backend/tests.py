@@ -1238,3 +1238,66 @@
 #     assert len(response.json()) == 2  # Должно быть 2 категории
 #     assert response.json()[0]['name'] == "Category 1"
 #     assert response.json()[1]['name'] == "Category 2"
+
+# Тест для проверки поиска товаров
+
+# from rest_framework.test import APITestCase
+# from rest_framework import status
+# from backend.models import Shop, Category, Product
+#
+#
+# class ProductSearchTestCase(APITestCase):
+#     def setUp(self):
+#         # Создаем магазин
+#         self.shop = Shop.objects.create(name="Связной", url="https://svyaznoy.ru")
+#
+#         # Создаем категории
+#         self.category1 = Category.objects.create(name="Смартфоны", shop_id=self.shop)
+#         self.category2 = Category.objects.create(name="Флешки", shop_id=self.shop)
+#
+#         # Создаем товары
+#         Product.objects.create(
+#             category=self.category1,
+#             model="apple-iphone-xs-max",
+#             name="Смартфон Apple iPhone XS Max",
+#             price=50000,
+#             price_rrc=60000,
+#             quantity=10,
+#             parameters={"color": "gold"}
+#         )
+#         Product.objects.create(
+#             category=self.category2,
+#             model="sandisk-ultra-flair-64gb",
+#             name="USB Flash Drive SanDisk Ultra Flair 64GB",
+#             price=1500,
+#             price_rrc=2000,
+#             quantity=5,
+#             parameters={"capacity": "64GB"}
+#         )
+#
+#         self.search_url = "/api/products/search/"
+#
+#     def test_search_by_category_and_shop(self):
+#         # Выполняем поиск товаров по категории "Смартфоны" и магазину "Связной"
+#         response = self.client.get(self.search_url, {"category_id": self.category1.id, "shop_id": self.shop.id})
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#
+#         # Проверяем, что в ответе только товары из нужной категории и магазина
+#         products = response.json()
+#         self.assertEqual(len(products), 1)  # Только 1 товар в этой категории и магазине
+#         self.assertEqual(products[0]["name"], "Смартфон Apple iPhone XS Max")
+#
+#     def test_search_empty_results(self):
+#         # Поиск товаров в несуществующей категории
+#         response = self.client.get(self.search_url, {"category_id": 999, "shop_id": self.shop.id})
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         products = response.json()
+#         self.assertEqual(len(products), 0)  # Никаких товаров нет в категории 999
+#
+#         # Поиск товаров в несуществующем магазине
+#         response = self.client.get(self.search_url, {"category_id": self.category1.id, "shop_id": 999})
+#         self.assertEqual(response.status_code, status.HTTP_200_OK)
+#         products = response.json()
+#         self.assertEqual(len(products), 0)  # Никаких товаров нет в магазине 999
+
+
